@@ -1,0 +1,230 @@
+﻿@page "/"
+@using RRCServices.Runner
+
+@rendermode InteractiveServer
+@inject IRunnerService RunnerService
+@inject NavigationManager Nav
+
+<PageTitle>RRC – Member Details</PageTitle>
+
+<div class="legacy-wrap">
+    <fieldset class="legacy-fieldset">
+        <legend class="legacy-legend">Enter your UK Athletics Number or Supply Credentials</legend>
+
+        <!-- UKA block -->
+        <fieldset class="legacy-inner">
+            <legend class="legacy-inner-legend">Your UKA Number (eg 3273942)</legend>
+
+            <div class="legacy-row">
+                <input class="legacy-input"
+                       placeholder=""
+                       inputmode="numeric"
+                       autocomplete="off"
+                       @bind="Ukan" />
+            </div>
+        </fieldset>
+
+        <div class="legacy-or">OR</div>
+
+        <!-- Name + DOB block -->
+        <fieldset class="legacy-inner">
+            <legend class="legacy-inner-legend">Credentials</legend>
+
+            <div class="legacy-form">
+                <label class="legacy-label">First Name</label>
+                <input class="legacy-input"
+                       autocomplete="given-name"
+                       @bind="FirstName" />
+
+                <label class="legacy-label">Second Name</label>
+                <input class="legacy-input"
+                       autocomplete="family-name"
+                       @bind="SecondName" />
+
+                <label class="legacy-label">Date of Birth</label>
+                <input class="legacy-input"
+                       type="date"
+                       autocomplete="bday"
+                       @bind="Dob" />
+            </div>
+
+            <div class="legacy-actions">
+                <button type="button" class="legacy-button" @onclick="Continue">
+                    Press To Enter
+                </button>
+            </div>
+        </fieldset>
+    </fieldset>
+</div>
+
+<style>
+    /* Modern mobile-friendly font + slightly tighter spacing */
+    :root {
+        --rrc-blue: #0046ad;
+        --rrc-yellow: #ffcc00;
+    }
+
+    .legacy-wrap {
+        padding: 12px;
+        display: flex;
+        justify-content: center;
+        background: #fff;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    .legacy-fieldset {
+        width: min(760px, 96vw);
+        border: 2px solid #bfbfbf;
+        padding: 12px 12px 14px;
+        background: #fff;
+    }
+
+    .legacy-legend {
+        font-size: 20px;
+        font-weight: 800;
+        padding: 0 8px;
+        color: #000;
+        margin-bottom: 6px;
+    }
+
+    .legacy-inner {
+        border: 2px solid #cfcfcf;
+        padding: 10px 10px 12px;
+        margin-top: 10px;
+        background: #fff;
+    }
+
+    .legacy-inner-legend {
+        font-size: 16px;
+        font-weight: 800;
+        padding: 0 8px;
+        color: #000;
+        margin-bottom: 4px;
+    }
+
+    .legacy-row {
+        margin-top: 6px;
+    }
+
+    .legacy-form {
+        display: grid;
+        gap: 8px;
+        margin-top: 6px;
+    }
+
+    .legacy-label {
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1.1;
+        margin-top: 2px;
+    }
+
+    .legacy-input {
+        width: min(420px, 100%);
+        padding: 8px 10px;
+        border: 2px solid #8f8f8f;
+        border-radius: 10px;
+        font-size: 14px;
+        outline: none;
+    }
+
+        .legacy-input:focus {
+            border-color: var(--rrc-blue);
+            box-shadow: 0 0 0 3px rgba(0, 70, 173, .14);
+        }
+
+    .legacy-or {
+        font-size: 20px;
+        font-weight: 900;
+        margin: 10px 0 2px;
+        padding-left: 8px;
+    }
+
+    .legacy-actions {
+        margin-top: 10px;
+        padding-left: 2px;
+    }
+
+    .legacy-button {
+        font-size: 15px;
+        padding: 10px 14px;
+        min-height: 44px; /* mobile tap target */
+        border-radius: 10px;
+        border: 2px solid #8f8f8f;
+        background: #efefef;
+        cursor: pointer;
+        font-weight: 800;
+    }
+
+        .legacy-button:hover {
+            background: var(--rrc-yellow);
+            border-color: #caa200;
+        }
+
+    /* Extra-tight on small phones */
+    @@media (max-width: 480px) {
+        .legacy-wrap {
+            padding: 10px;
+        }
+
+        .legacy-fieldset {
+            padding: 10px 10px 12px;
+        }
+
+        .legacy-inner {
+            padding: 10px;
+            margin-top: 8px;
+        }
+
+        .legacy-legend {
+            font-size: 18px;
+        }
+
+        .legacy-inner-legend {
+            font-size: 15px;
+        }
+
+        .legacy-or {
+            font-size: 18px;
+            margin: 8px 0 2px;
+        }
+
+        .legacy-input {
+            padding: 7px 9px;
+            font-size: 14px;
+        }
+    }
+
+
+
+</style>
+
+@code
+{
+    // Inputs (UI only for now)
+    private string? Ukan { get; set; }
+    private string? FirstName { get; set; }
+    private string? SecondName { get; set; }
+
+    // Use DateTime? for broad compatibility with Blazor/VS2022 + <input type="date">
+    private DateTime? Dob { get; set; }
+
+    private async Task Continue()
+    {
+        var runnerId = await RunnerService.FindRunnerIdAsync(
+            ukan: Ukan,
+            firstName: FirstName,
+            secondName: SecondName,
+            dob: Dob);
+
+        if (runnerId.HasValue && runnerId.Value > 0)
+        {
+            Nav.NavigateTo($"/mydetails?RunnerId={runnerId.Value}");
+            return;
+        }
+
+       // Clear();
+    }
+
+}
+
