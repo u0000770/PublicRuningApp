@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using PublicApp.Components;
 using RRCDataModel.Data;
 using RRCServices;
@@ -6,6 +6,7 @@ using RRCServices.Calculator;
 using RRCServices.Calculator.RRCServices;
 using RRCServices.Clock;
 using RRCServices.Runner;
+using RRCServices.Season;
 
 namespace PublicApp;
 
@@ -15,14 +16,36 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
+        //      builder.Services.AddDbContextFactory<RRCContext>(options =>
+        //options.UseSqlServer(builder.Configuration.GetConnectionString("RRC")));
+
+
+        var cs = builder.Configuration.GetConnectionString("RRCAzure");
+        if (string.IsNullOrWhiteSpace(cs))
+            throw new InvalidOperationException("Connection string 'RRCAzure' not found.");
+
         builder.Services.AddDbContextFactory<RRCContext>(options =>
-  options.UseSqlServer(builder.Configuration.GetConnectionString("RRC")));
+            options.UseSqlServer(cs));
+
+       // builder.Services.AddDbContextFactory<RRCContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("RRCAzure")));
 
 
         builder.Services.AddScoped<IRaceEventService, RaceEventService>();
         builder.Services.AddScoped<IRunnerService, RunnerService>();
         builder.Services.AddScoped<IClock, SystemClock>();
         builder.Services.AddScoped<CalculatorService>();
+
+        // ✅ Register the settings store (file path wherever you want)
+        var seasonSettingsPath = Path.Combine(
+            builder.Environment.ContentRootPath,
+            "App_Data",
+            "seasonSettings.json");
+
+        // ✅ Store + service registrations (required)
+        builder.Services.AddSingleton<ISeasonSettingsStore>(_ =>
+            new JsonSeasonSettingsStore(seasonSettingsPath));
+
+        builder.Services.AddSingleton<ISeasonSettingsService, SeasonSettingsService>();
 
 
         // Add services to the container.

@@ -1,11 +1,15 @@
 ﻿@page "/mydetails"
 @rendermode InteractiveServer
 
+@using Calculator
 @using Microsoft.AspNetCore.Components
 @using RRCServices
 @using RRCServices.Calculator
 @using RRCServices.Clock
 @using RRCServices.Runner
+
+@using RRCServices.Season
+@inject ISeasonSettingsService SeasonSettingsService
 
 @inject IRunnerService RunnerService
 @inject IRaceEventService RaceEventService
@@ -29,7 +33,6 @@ else
 {
     <div class="panel panel-default">
         <div class="panel-body">
-
             <h2 class="mb-3">@_runner.Ukan @(_runner.Name)</h2>
 
             <div class="form-group mb-4">
@@ -88,7 +91,11 @@ else
 
                 @if (LastThreeNonMileRaces.Count == 0)
                 {
-                    <p>No eligible races found.</p>
+                    <p class="text-muted mb-0">
+                        No eligible races recorded yet this season (from @_seasonStart.ToString("dd MMM yyyy")).
+                        Once you’ve completed at least one race this season, we’ll show your most recent results here.
+                    </p>
+                    <p>&nbsp</p>
                 }
                 else
                 {
@@ -119,6 +126,51 @@ else
     }
 
 
+    ///
+    @if (_runner is not null)
+    {
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <h4>Your recorded trophy races:</h4>
+
+                @if (TrophyRaces.Count == 0)
+                {
+                    <p>We currently have no races recorded to calculate a predicted time</p>
+                    <p>&nbsp</p>
+                }
+                else
+                {
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Race</th>
+                                <th>Distance</th>
+                                <th>Date</th>
+                                <th>Recorded Time</th>
+                                <th>Age Grade</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var r in TrophyRaces)
+                            {
+                                <tr>
+                                    <td>@r.RaceTitle</td>
+                                    <td>@r.DistanceLabel</td>
+                                    <td>@r.RaceDate.ToString("dd/MM/yyyy")</td>
+                                    <td>@r.RecordedTime</td>
+                                    <td>@r.AgeGrade</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    }
+
+
+    ///
+
 }
 
 @code {
@@ -126,6 +178,9 @@ else
     [Parameter]
     [SupplyParameterFromQuery]
     public int RunnerId { get; set; }
+
+    private DateTime _seasonStart; // DateTime for comparisons
+    private bool _hasSeasonRaces;  // runner has >=1 eligible race this season
 
     private bool _loading = true;
 
@@ -149,13 +204,15 @@ else
      _runner?.EventTimes
          .Where(t => t.RaceDate.HasValue)
          .Where(t => t.RaceDate!.Value.Date < Clock.Now.Date) // completed only
+         .Where(t => t.RaceDate!.Value >= _seasonStart)       // ✅ in-season only
          .Where(t => t.ActualSeconds.HasValue && t.ActualSeconds.Value > 0)
          .Where(t => t.DistanceMeters.HasValue && t.DistanceMeters.Value > 0)
-         .Where(t => !IsOneMile(t.DistanceMeters!.Value))     // ✅ exclude 1 mile by meters
+         .Where(t => !IsOneMile(t.DistanceMeters!.Value))     // ✅ exclude 1 mile
          .OrderByDescending(t => t.RaceDate)
          .Take(3)
          .ToList()
      ?? new List<EventRaceTimesDto>();
+
 
     private static bool IsOneMile(double meters)
     {
@@ -170,7 +227,28 @@ else
     {
         _loading = true;
 
+        if (RunnerId <= 0)
+        {
+            _runner = null;
+            _loading = false;
+            return;
+        }
+
+        var season = await SeasonSettingsService.GetAsync();
+       // _seasonStart = season.SeasonStartDate.ToDateTime(TimeOnly.MinValue);
+
+        _seasonStart = new DateTime(2025, 12, 1);
+
         _runner = await RunnerService.GetRunnerDetailsAsync(RunnerId, includeInactiveTimes: false);
+
+        _hasSeasonRaces = _runner.EventTimes.Any(t =>
+    t.RaceDate.HasValue &&
+    t.RaceDate.Value >= _seasonStart &&
+    t.ActualSeconds.HasValue &&
+    t.ActualSeconds.Value > 0 &&
+    t.DistanceMeters.HasValue &&
+    t.DistanceMeters.Value > 0 &&
+    !IsOneMile(t.DistanceMeters.Value));
 
         if (_runner is null)
         {
@@ -252,6 +330,51 @@ else
         }
     }
 
+    private sealed class TrophyRaceRow
+    {
+        public string RaceTitle { get; init; } = "";
+        public string DistanceLabel { get; init; } = "";
+        public DateTime RaceDate { get; init; }
+        public string RecordedTime { get; init; } = "";
+        public string AgeGrade { get; init; } = "";
+    }
+
+    private List<TrophyRaceRow> TrophyRaces =>
+    _runner?.EventTimes
+        .Where(t => t.RaceDate.HasValue)
+        .Where(t => t.ActualSeconds.HasValue && t.ActualSeconds.Value > 0)
+        .Where(t => t.DistanceMeters.HasValue && t.DistanceMeters.Value > 0)
+        .Where(t => t.RaceDate!.Value.Date < Clock.Now.Date)
+        .OrderByDescending(t => t.RaceDate)
+        .Select(t =>
+        {
+            DateTime? dobDt = _runner.Dob?.ToDateTime(TimeOnly.MinValue);
+
+            var ageGrade =
+                (dobDt.HasValue && t.RaceDate.HasValue && !string.IsNullOrWhiteSpace(t.RaceDistance))
+                ? AgeGrade.GetWavScore(
+                    time: t.ActualSeconds!.Value,
+                    gender: _runner.IsMale,
+                    dob: dobDt,
+                    RaceCode: t.RaceDistance,      // ✅ distance code
+                    RaceDate: t.RaceDate)
+                : 0;
+
+            return new TrophyRaceRow
+            {
+                RaceTitle = t.RaceTitle ?? "(unknown)",
+                DistanceLabel = FormatRaceDistanceLabel(t.DistanceMeters!.Value),
+                RaceDate = t.RaceDate!.Value,
+                RecordedTime = FormatHms(t.ActualSeconds!.Value),
+                AgeGrade = ageGrade.ToString()
+            };
+        })
+        .ToList()
+    ?? new List<TrophyRaceRow>();
+
+
+    //  public static int GetWavScore(int time, bool gender, DateTime? dob, string RaceCode, DateTime? RaceDate)
+
     // ---------------- Core calculate ----------------
 
     private static double GetRaceEventDistanceMeters(RaceEventListItemDTO re) => re.DistanceMeters;
@@ -268,11 +391,16 @@ else
             return;
         }
 
-        var newDistanceMeters = GetRaceEventDistanceMeters(SelectedRaceEvent);
+        if (!_hasSeasonRaces)
+        {
+            _calcMessage = $"We can’t provide a predicted time yet — please run at least one race this season (from {_seasonStart:dd MMM yyyy}).";
+            return;
+        }
 
+        var newDistanceMeters = GetRaceEventDistanceMeters(SelectedRaceEvent);
         if (newDistanceMeters <= 0)
         {
-            _calcMessage = "Could not determine the selected race distance (meters). Check RaceEventListItemDTO.DistanceMeters.";
+            _calcMessage = "Could not determine the selected race distance (meters).";
             return;
         }
 
@@ -280,8 +408,10 @@ else
 
         var recent = _runner.EventTimes
             .Where(t => t.RaceDate.HasValue && t.RaceDate.Value.Date < today)
+            .Where(t => t.RaceDate!.Value >= _seasonStart)            // ✅ in-season only
             .Where(t => t.ActualSeconds.HasValue && t.ActualSeconds.Value > 0)
             .Where(t => t.DistanceMeters.HasValue && t.DistanceMeters.Value > 0)
+            .Where(t => !IsOneMile(t.DistanceMeters!.Value))          // ✅ exclude mile
             .OrderByDescending(t => t.RaceDate)
             .Take(3)
             .Select(t => new RecentRaceDto
@@ -293,12 +423,11 @@ else
 
         if (recent.Count == 0)
         {
-            _calcMessage = "No recent completed races (with actual times) found for this runner — cannot predict.";
+            _calcMessage = $"We can’t provide a predicted time yet — please run at least one eligible race this season (from {_seasonStart:dd MMM yyyy}).";
             return;
         }
 
         var predicted = CalculatorService.PredictFromRecentRaces(recent, newDistanceMeters);
-
         if (predicted is null)
         {
             _calcMessage = "Prediction failed (no usable recent race data).";
@@ -306,8 +435,9 @@ else
         }
 
         _predictedSeconds = (int)Math.Round(predicted.Value);
-        _calcMessage = $"Prediction calculated using {recent.Count} recent race(s).";
+        _calcMessage = $"Prediction calculated using {recent.Count} race(s) from this season.";
     }
+
 
     // ---------------- Formatting helpers ----------------
 
