@@ -1,6 +1,10 @@
 ﻿<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <NavLink class="navbar-brand" href="" Match="NavLinkMatch.All">PublicApp</NavLink>
+        <NavLink class="rrc-badge navbar-brand"
+                 href=""
+                 Match="NavLinkMatch.All">
+            R.R.C.
+        </NavLink>
     </div>
 </div>
 
@@ -10,22 +14,44 @@
     <nav class="flex-column">
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+                <span class="bi bi-house-door-fill-nav-menu"></span> Home
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="league">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> League
+                <span class="bi bi-list-nested-nav-menu"></span> League
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="races">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Races
+                <span class="bi bi-list-nested-nav-menu"></span> Races
             </NavLink>
         </div>
     </nav>
 </div>
 
+<style>
+.rrc-badge {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    background: #0b2a5b;          /* dark blue */
+    color: #ffcc00;               /* yellow text */
+    font-weight: 900;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 10px 22px rgba(0,0,0,.35);
+    user-select: none;
+    margin-bottom: 10px;
+    text-decoration: none;
+}
+
+/* Force override of Bootstrap navbar branding */
+.navbar-dark .navbar-brand.rrc-badge {
+    color: #ffcc00 !important;
+}
+
+</style>
 

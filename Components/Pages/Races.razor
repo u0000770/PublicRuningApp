@@ -1,122 +1,110 @@
 ﻿@page "/races"
 @rendermode InteractiveServer
 
-<PageTitle>Races – Coming Soon</PageTitle>
+@using RRCServices
+@inject IRaceEventService RaceEventService
 
-<div class="soon-shell">
-    <div class="soon-card">
-        <div class="badge">RRC</div>
+<PageTitle>JR and DB Races</PageTitle>
 
-        <h1>Our races</h1>
-        <p class="muted">
-            Race listings are on the way — including upcoming fixtures
-        </p>
-
-
-    </div>
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <h3 class="mb-0">JR and DB Races 2026</h3>
 </div>
 
-<style>
-    .soon-shell {
-        min-height: 100dvh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 14px;
-        background: radial-gradient(900px 500px at 20% -10%, rgba(255, 204, 0, 0.18), transparent 60%), radial-gradient(700px 400px at 95% 10%, rgba(0, 70, 173, 0.16), transparent 60%), linear-gradient(180deg, #0b2a5b 0%, #071a38 45%, #06152e 100%);
-        color: #fff;
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+@if (_loading)
+{
+    <p>Loading…</p>
+}
+else if (!string.IsNullOrWhiteSpace(_error))
+{
+    <div class="alert alert-danger">@_error</div>
+}
+else if (_races.Count == 0)
+{
+    <p class="text-muted">No races found for this period.</p>
+}
+else
+{
+    <div class="text-muted mb-2">
+       <p>These are our JR and DB Trophy Races - for a definative list refer to the most recent email</p>
+    </div>
+
+    <table class="table table-sm table-striped align-middle">
+        <thead>
+            <tr>
+                <th style="width:110px;">Date</th>
+                <th>Event</th>
+                <th style="width:110px;">Distance</th>
+                <th style="width:200px;">Location</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in _races)
+            {
+                <tr>
+                    <td>@r.Date.ToString("dd MMM")</td>
+                    <td>@(string.IsNullOrWhiteSpace(r.EventTitle) ? "(untitled)" : r.EventTitle)</td>
+                    <td>@(string.IsNullOrWhiteSpace(r.DistanceCode) ? "-" : r.DistanceCode)</td>
+                    <td>@(string.IsNullOrWhiteSpace(r.Location) ? "-" : r.Location)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code
+{
+    private bool _loading = true;
+    private string? _error;
+
+    // fixed window you requested
+    private readonly DateTime _from = new DateTime(2026, 1, 1);
+    private readonly DateTime _to = new DateTime(2026, 12, 1);
+
+    private List<RaceEventListItemVM> _races = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+        _error = null;
+        _races.Clear();
+
+        try
+        {
+            var dto = await RaceEventService.GetRaceEventListAsync(
+                activeOnly: true,
+                distanceCode: null,
+                from: _from,
+                to: _to);
+
+            _races = dto
+                .Where(x => x.Active) // defensive (activeOnly should already do it)
+                .OrderBy(x => x.Date)
+                .Select(x => new RaceEventListItemVM
+                {
+                    EventTitle = x.EventTitle,
+                    Date = x.Date,
+                    DistanceCode = x.DistanceCode,
+                    Location = x.Location
+                })
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
     }
 
-    .soon-card {
-        width: min(520px, 95vw);
-        border-radius: 18px;
-        padding: 16px 14px;
-        background: rgba(255,255,255,.10);
-        border: 1px solid rgba(255,255,255,.14);
-        box-shadow: 0 18px 50px rgba(0,0,0,.45);
-        backdrop-filter: blur(10px);
+    public sealed class RaceEventListItemVM
+    {
+        public string? EventTitle { get; set; }
+        public DateTime Date { get; set; }
+        public string? DistanceCode { get; set; }
+        public string? Location { get; set; }
     }
+}
 
-    .badge {
-        width: 46px;
-        height: 46px;
-        border-radius: 14px;
-        background: #ffcc00;
-        color: #0b2a5b;
-        font-weight: 900;
-        display: grid;
-        place-items: center;
-        box-shadow: 0 10px 22px rgba(0,0,0,.35);
-        user-select: none;
-        margin-bottom: 10px;
-    }
-
-    h1 {
-        font-size: 18px;
-        margin: 0 0 6px 0;
-        font-weight: 900;
-        letter-spacing: .2px;
-    }
-
-    .muted {
-        font-size: 13px;
-        opacity: .88;
-        margin: 0 0 12px 0;
-    }
-
-    .chips {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin: 0 0 14px 0;
-    }
-
-    .chip {
-        font-size: 12px;
-        padding: 7px 10px;
-        border-radius: 999px;
-        background: rgba(0,0,0,.18);
-        border: 1px solid rgba(255,255,255,.16);
-        opacity: .95;
-    }
-
-    .actions {
-        display: flex;
-        gap: 10px;
-        margin-top: 10px;
-    }
-
-    .btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 14px;
-        padding: 10px 12px;
-        font-weight: 800;
-        font-size: 13px;
-        text-decoration: none;
-        flex: 1;
-    }
-
-    .primary {
-        background: #ffcc00;
-        color: #0b2a5b;
-        border: none;
-        box-shadow: 0 12px 22px rgba(0,0,0,.35);
-    }
-
-    .ghost {
-        background: transparent;
-        color: rgba(255,255,255,.92);
-        border: 1px solid rgba(255,255,255,.22);
-    }
-
-    .hint {
-        margin-top: 12px;
-        font-size: 11px;
-        opacity: .75;
-        text-align: center;
-    }
-</style>
 
