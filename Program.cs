@@ -5,6 +5,7 @@ using RRCServices;
 using RRCServices.Calculator;
 using RRCServices.Calculator.RRCServices;
 using RRCServices.Clock;
+using RRCServices.League;
 using RRCServices.Runner;
 using RRCServices.Season;
 
@@ -34,6 +35,8 @@ public class Program
         builder.Services.AddScoped<IRunnerService, RunnerService>();
         builder.Services.AddScoped<IClock, SystemClock>();
         builder.Services.AddScoped<CalculatorService>();
+
+     //   builder.Services.AddScoped<ILeagueTableService, LeagueTableService>();
 
         // ✅ Register the settings store (file path wherever you want)
         var seasonSettingsPath = Path.Combine(
