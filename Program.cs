@@ -25,8 +25,20 @@ public class Program
         if (string.IsNullOrWhiteSpace(cs))
             throw new InvalidOperationException("Connection string 'RRCAzure' not found.");
 
+
+        ////
         builder.Services.AddDbContextFactory<RRCContext>(options =>
-            options.UseSqlServer(cs));
+    options.UseSqlServer(cs, sql =>
+        sql.EnableRetryOnFailure(
+            maxRetryCount: 3,
+            maxRetryDelay: TimeSpan.FromSeconds(10),
+            errorNumbersToAdd: null)));
+
+
+        ////
+
+        //builder.Services.AddDbContextFactory<RRCContext>(options =>
+        //    options.UseSqlServer(cs));
 
        // builder.Services.AddDbContextFactory<RRCContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("RRCAzure")));
 
@@ -35,8 +47,6 @@ public class Program
         builder.Services.AddScoped<IRunnerService, RunnerService>();
         builder.Services.AddScoped<IClock, SystemClock>();
         builder.Services.AddScoped<CalculatorService>();
-
-      // builder.Services.AddScoped<ILeagueTableService, ILeagueTableService>();
 
         // ✅ Register the settings store (file path wherever you want)
         var seasonSettingsPath = Path.Combine(

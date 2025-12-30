@@ -41,9 +41,9 @@
                         }
                     </button>
 
-                    <button class="btn btn-outline-secondary" @onclick="Reset" disabled="@isLoading">
+                   @*  <button class="btn btn-outline-secondary" @onclick="Reset" disabled="@isLoading">
                         Reset
-                    </button>
+                    </button> *@
                 </div>
             </div>
 
@@ -92,10 +92,10 @@
                                         <tr>
                                             <th style="width:70px;">Pos</th>
                                             <th>Runner</th>
-                                            <th style="width:110px;">UKAN</th>
+                                           @*  <th style="width:110px;">UKAN</th> *@
                                             <th style="width:90px;" class="text-end">Points</th>
                                             <th style="width:120px;" class="text-end">TimeDiff</th>
-                                            <th style="width:90px;" class="text-end">Total</th>
+                                           @*  <th style="width:90px;" class="text-end">Total</th> *@
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -104,11 +104,11 @@
                                             <tr>
                                                 <td>@row.Position</td>
                                                 <td>@row.RunnerName</td>
-                                                <td>@(row.Ukan ?? "")</td>
+                                                @* <td>@(row.Ukan ?? "")</td> *@
                                                 <td class="text-end">@row.Points</td>
                                                 <td class="text-end">@row.TimeDiffSeconds</td>
                                                @*  <td class="text-end">@FormatTimeDiff(row.TimeDiffSeconds)</td> *@
-                                                <td class="text-end">@row.TotalRaces</td>
+                                               @*  <td class="text-end">@row.TotalRaces</td> *@
                                             </tr>
                                         }
                                     </tbody>
@@ -138,10 +138,10 @@
                                         <tr>
                                             <th style="width:70px;">Pos</th>
                                             <th>Runner</th>
-                                            <th style="width:110px;">UKAN</th>
+                                           @*  <th style="width:110px;">UKAN</th> *@
                                             <th style="width:90px;" class="text-end">Points</th>
                                             <th style="width:120px;" class="text-end">TimeDiff</th>
-                                            <th style="width:90px;" class="text-end">Total</th>
+                                            @* <th style="width:90px;" class="text-end">Total</th> *@
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -150,11 +150,11 @@
                                             <tr>
                                                 <td>@row.Position</td>
                                                 <td>@row.RunnerName</td>
-                                                <td>@(row.Ukan ?? "")</td>
+                                               @*  <td>@(row.Ukan ?? "")</td> *@
                                                 <td class="text-end">@row.Points</td>
                                                 <td class="text-end">@row.TimeDiffSeconds</td>
                                                @*  <td class="text-end">@FormatTimeDiff(row.TimeDiffSeconds)</td> *@
-                                                <td class="text-end">@row.TotalRaces</td>
+                                               @*  <td class="text-end">@row.TotalRaces</td> *@
                                             </tr>
                                         }
                                     </tbody>
@@ -168,59 +168,4 @@
     }
 </div>
 
-@code {
-   // private DateTime seasonStart = new(DateTime.Today.Year, 1, 1);
-   // private DateTime seasonEnd = DateTime.Today;
 
-     private DateTime seasonStart = new DateTime(2025,01,01);
-    private DateTime seasonEnd = new DateTime(2025,11,30);
-
-    private TrophyLeaguePageDto? page;
-    private bool isLoading;
-    private string? error;
-
-    private async Task LoadAsync()
-    {
-        error = null;
-        page = null;
-
-        if (seasonEnd < seasonStart)
-        {
-            error = "Season end must be on or after season start.";
-            return;
-        }
-
-        isLoading = true;
-        try
-        {
-            page = await LeagueTableService.GetLeagueTablesAsync(seasonStart, seasonEnd);
-        }
-        catch (Exception ex)
-        {
-            error = ex.Message;
-        }
-        finally
-        {
-            isLoading = false;
-        }
-    }
-
-    private void Reset()
-    {
-        seasonStart = new DateTime(2025,01,01);
-        seasonEnd = new DateTime(2025,11,30);
-        page = null;
-        error = null;
-    }
-
-    private static string FormatTimeDiff(int seconds)
-    {
-        // You store timeDiff as seconds of improvement (capped per race).
-        // Display as mm:ss for readability.
-        if (seconds <= 0) return "0:00";
-
-        var ts = TimeSpan.FromSeconds(seconds);
-        // total minutes can exceed 59, so use (int)TotalMinutes
-        return $"{(int)ts.TotalMinutes}:{ts.Seconds:D2}";
-    }
-}

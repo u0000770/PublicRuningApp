@@ -1,0 +1,36 @@
+﻿
+FullName                                                                                                      
+--------                                                                                                      
+C:\Users\u0000770PC\source\repos\PublicApp\.gitattributes                                                     
+C:\Users\u0000770PC\source\repos\PublicApp\.gitignore                                                         
+C:\Users\u0000770PC\source\repos\PublicApp\appsettings.Development.json                                       
+C:\Users\u0000770PC\source\repos\PublicApp\appsettings.json                                                   
+C:\Users\u0000770PC\source\repos\PublicApp\Class.cs                                                           
+C:\Users\u0000770PC\source\repos\PublicApp\clock.cs                                                           
+C:\Users\u0000770PC\source\repos\PublicApp\Program.cs                                                         
+C:\Users\u0000770PC\source\repos\PublicApp\PublicApp.csproj                                                   
+C:\Users\u0000770PC\source\repos\PublicApp\PublicApp.csproj.user                                              
+C:\Users\u0000770PC\source\repos\PublicApp\PublicApp.sln                                                      
+C:\Users\u0000770PC\source\repos\PublicApp\structure.txt                                                      
+C:\Users\u0000770PC\source\repos\PublicApp\Components\App.razor                                               
+C:\Users\u0000770PC\source\repos\PublicApp\Components\Routes.razor                                            
+C:\Users\u0000770PC\source\repos\PublicApp\Components\_Imports.razor                                          
+C:\Users\u0000770PC\source\repos\PublicApp\Components\Layout\MainLayout.razor                                 
+C:\Users\u0000770PC\source\repos\PublicApp\Components\Layout\MainLayout.razor.css                             
+C:\Users\u0000770PC\source\repos\PublicApp\Components\Layout\NavMenu.razor                                    
+C:\Users\u0000770PC\source\repos\PublicApp\Components\Layout\NavMenu.razor.css                                
+C:\Users\u0000770PC\source\repos\PublicApp\Components\Pages\Error.razor                                       
+C:\Users\u0000770PC\source\repos\PublicApp\Components\Pages\Home.razor                                        
+C:\Users\u0000770PC\source\repos\PublicApp\Components\Pages\League.razor                                      
+C:\Users\u0000770PC\source\repos\PublicApp\Components\Pages\MyDetails.razor                                   
+C:\Users\u0000770PC\source\repos\PublicApp\Components\Pages\Races.razor                                       
+C:\Users\u0000770PC\source\repos\PublicApp\Properties\launchSettings.json                                     
+C:\Users\u0000770PC\source\repos\PublicApp\Properties\PublishProfiles\rrcrrc - Web Deploy.pubxml              
+C:\Users\u0000770PC\source\repos\PublicApp\Properties\PublishProfiles\rrcrrc - Web Deploy.pubxml.user         
+C:\Users\u0000770PC\source\repos\PublicApp\Properties\ServiceDependencies\rrcrrc - Web Deploy\profile.arm.json
+C:\Users\u0000770PC\source\repos\PublicApp\wwwroot\app.css                                                    
+C:\Users\u0000770PC\source\repos\PublicApp\wwwroot\favicon.png                                                
+C:\Users\u0000770PC\source\repos\PublicApp\wwwroot\bootstrap\bootstrap.min.css                                
+C:\Users\u0000770PC\source\repos\PublicApp\wwwroot\bootstrap\bootstrap.min.css.map                            
+
+
