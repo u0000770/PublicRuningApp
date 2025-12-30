@@ -36,7 +36,7 @@ public class Program
         builder.Services.AddScoped<IClock, SystemClock>();
         builder.Services.AddScoped<CalculatorService>();
 
-     //   builder.Services.AddScoped<ILeagueTableService, LeagueTableService>();
+      // builder.Services.AddScoped<ILeagueTableService, ILeagueTableService>();
 
         // ✅ Register the settings store (file path wherever you want)
         var seasonSettingsPath = Path.Combine(
@@ -48,7 +48,8 @@ public class Program
         builder.Services.AddSingleton<ISeasonSettingsStore>(_ =>
             new JsonSeasonSettingsStore(seasonSettingsPath));
 
-        builder.Services.AddSingleton<ISeasonSettingsService, SeasonSettingsService>();
+        builder.Services.AddScoped<ILeagueTableService, LeagueTableService>();
+        builder.Services.AddScoped<ILeagueDataService, LeagueDataService>();
 
 
         // Add services to the container.

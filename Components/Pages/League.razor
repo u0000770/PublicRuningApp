@@ -1,116 +1,226 @@
 ﻿@page "/league"
 @rendermode InteractiveServer
 
-<PageTitle>League – Coming Soon</PageTitle>
+@using System.Globalization
 
-<div class="soon-shell">
-    <div class="soon-card">
-        <div class="badge">RRC</div>
+@* IMPORTANT: pick ONE of these depending on your actual DTO namespaces *@
+@* @using RRCServices.League
+@using RRCServices.League.DTO *@
+@* If you still have the nested namespace, use this instead: *@
+@using RRCServices.League
+@using RRCServices.League.DTO
 
-        <h1>League table</h1>
-        <p class="muted">
-            We’re polishing the new league table experience.
-            It’ll be available here soon.
-        </p>
+
+@inject ILeagueTableService LeagueTableService
+
+<PageTitle>League</PageTitle>
+
+<div class="container py-3">
+    <h3 class="mb-3">Hypothetical New Rules League Tables</h3>
+    <p> Meet or beat = 10, otherwise 6. JR best of 8, DB best of 6, your position is the best possible</p>
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+              @*   <div class="col-12 col-md-4">
+                    <label class="form-label">Season start</label>
+                    <InputDate @bind-Value="seasonStart" class="form-control" />
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">Season end</label>
+                    <InputDate @bind-Value="seasonEnd" class="form-control" />
+                </div> *@
+                <div class="col-12 col-md-4 d-flex gap-2">
+                    <button class="btn btn-primary" @onclick="LoadAsync" disabled="@isLoading">
+                        @if (isLoading)
+                        {
+                            <span>Loading…</span>
+                        }
+                        else
+                        {
+                            <span>Load</span>
+                        }
+                    </button>
+
+                    <button class="btn btn-outline-secondary" @onclick="Reset" disabled="@isLoading">
+                        Reset
+                    </button>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(error))
+            {
+                <div class="alert alert-danger mt-3 mb-0">
+                    @error
+                </div>
+            }
+        </div>
     </div>
+
+    @if (page is null && !isLoading)
+    {
+        <div class="text-muted">
+            Choose dates and click <strong>Load</strong>.
+        </div>
+    }
+
+    @if (isLoading)
+    {
+        <div class="alert alert-info">
+            Fetching league tables…
+        </div>
+    }
+
+    @if (page is not null)
+    {
+        <div class="row g-3">
+            <div class="col-12 col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header d-flex align-items-center justify-content-between">
+                        <strong>JR League</strong>
+                        <span class="text-muted small">Jr.Count runner(s)</span>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (page.Jr.Count == 0)
+                        {
+                            <div class="p-3 text-muted">No JR results for the selected range.</div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-sm table-striped mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th style="width:70px;">Pos</th>
+                                            <th>Runner</th>
+                                            <th style="width:110px;">UKAN</th>
+                                            <th style="width:90px;" class="text-end">Points</th>
+                                            <th style="width:120px;" class="text-end">TimeDiff</th>
+                                            <th style="width:90px;" class="text-end">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var row in page.Jr)
+                                        {
+                                            <tr>
+                                                <td>@row.Position</td>
+                                                <td>@row.RunnerName</td>
+                                                <td>@(row.Ukan ?? "")</td>
+                                                <td class="text-end">@row.Points</td>
+                                                <td class="text-end">@row.TimeDiffSeconds</td>
+                                               @*  <td class="text-end">@FormatTimeDiff(row.TimeDiffSeconds)</td> *@
+                                                <td class="text-end">@row.TotalRaces</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header d-flex align-items-center justify-content-between">
+                        <strong>DB League</strong>
+                        <span class="text-muted small">Db.Count runner(s)</span>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (page.Db.Count == 0)
+                        {
+                            <div class="p-3 text-muted">No DB results for the selected range.</div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-sm table-striped mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th style="width:70px;">Pos</th>
+                                            <th>Runner</th>
+                                            <th style="width:110px;">UKAN</th>
+                                            <th style="width:90px;" class="text-end">Points</th>
+                                            <th style="width:120px;" class="text-end">TimeDiff</th>
+                                            <th style="width:90px;" class="text-end">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var row in page.Db)
+                                        {
+                                            <tr>
+                                                <td>@row.Position</td>
+                                                <td>@row.RunnerName</td>
+                                                <td>@(row.Ukan ?? "")</td>
+                                                <td class="text-end">@row.Points</td>
+                                                <td class="text-end">@row.TimeDiffSeconds</td>
+                                               @*  <td class="text-end">@FormatTimeDiff(row.TimeDiffSeconds)</td> *@
+                                                <td class="text-end">@row.TotalRaces</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 </div>
 
-<style>
-    .soon-shell {
-        min-height: 100dvh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 14px;
-        background: radial-gradient(900px 500px at 20% -10%, rgba(255, 204, 0, 0.18), transparent 60%),
-                    radial-gradient(700px 400px at 95% 10%, rgba(0, 70, 173, 0.16), transparent 60%),
-                    linear-gradient(180deg, #0b2a5b 0%, #071a38 45%, #06152e 100%);
-        color: #fff;
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+@code {
+   // private DateTime seasonStart = new(DateTime.Today.Year, 1, 1);
+   // private DateTime seasonEnd = DateTime.Today;
+
+     private DateTime seasonStart = new DateTime(2025,01,01);
+    private DateTime seasonEnd = new DateTime(2025,11,30);
+
+    private TrophyLeaguePageDto? page;
+    private bool isLoading;
+    private string? error;
+
+    private async Task LoadAsync()
+    {
+        error = null;
+        page = null;
+
+        if (seasonEnd < seasonStart)
+        {
+            error = "Season end must be on or after season start.";
+            return;
+        }
+
+        isLoading = true;
+        try
+        {
+            page = await LeagueTableService.GetLeagueTablesAsync(seasonStart, seasonEnd);
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
-    .soon-card {
-        width: min(520px, 95vw);
-        border-radius: 18px;
-        padding: 16px 14px;
-        background: rgba(255,255,255,.10);
-        border: 1px solid rgba(255,255,255,.14);
-        box-shadow: 0 18px 50px rgba(0,0,0,.45);
-        backdrop-filter: blur(10px);
+    private void Reset()
+    {
+        seasonStart = new DateTime(2025,01,01);
+        seasonEnd = new DateTime(2025,11,30);
+        page = null;
+        error = null;
     }
 
-    .badge {
-        width: 46px;
-        height: 46px;
-        border-radius: 14px;
-        background: #ffcc00;
-        color: #0b2a5b;
-        font-weight: 900;
-        display: grid;
-        place-items: center;
-        box-shadow: 0 10px 22px rgba(0,0,0,.35);
-        user-select: none;
-        margin-bottom: 10px;
+    private static string FormatTimeDiff(int seconds)
+    {
+        // You store timeDiff as seconds of improvement (capped per race).
+        // Display as mm:ss for readability.
+        if (seconds <= 0) return "0:00";
+
+        var ts = TimeSpan.FromSeconds(seconds);
+        // total minutes can exceed 59, so use (int)TotalMinutes
+        return $"{(int)ts.TotalMinutes}:{ts.Seconds:D2}";
     }
-
-    h1 {
-        font-size: 18px;
-        margin: 0 0 6px 0;
-        font-weight: 900;
-        letter-spacing: .2px;
-    }
-
-    .muted {
-        font-size: 13px;
-        opacity: .88;
-        margin: 0 0 12px 0;
-    }
-
-    .bullets {
-        margin: 0 0 14px 0;
-        padding-left: 18px;
-        font-size: 13px;
-        opacity: .95;
-    }
-
-    .bullets li { margin: 6px 0; }
-
-    .actions {
-        display: flex;
-        gap: 10px;
-        margin-top: 10px;
-    }
-
-    .btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 14px;
-        padding: 10px 12px;
-        font-weight: 800;
-        font-size: 13px;
-        text-decoration: none;
-        flex: 1;
-    }
-
-    .primary {
-        background: #ffcc00;
-        color: #0b2a5b;
-        border: none;
-        box-shadow: 0 12px 22px rgba(0,0,0,.35);
-    }
-
-    .ghost {
-        background: transparent;
-        color: rgba(255,255,255,.92);
-        border: 1px solid rgba(255,255,255,.22);
-    }
-
-    .hint {
-        margin-top: 12px;
-        font-size: 11px;
-        opacity: .75;
-        text-align: center;
-    }
-</style>
-
+}
