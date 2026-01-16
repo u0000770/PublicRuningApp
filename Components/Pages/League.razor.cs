@@ -7,8 +7,8 @@ namespace PublicApp.Components.Pages
         // private DateTime seasonStart = new(DateTime.Today.Year, 1, 1);
         // private DateTime seasonEnd = DateTime.Today;
 
-        private DateTime seasonStart = new DateTime(2025, 01, 01);
-        private DateTime seasonEnd = new DateTime(2025, 11, 30);
+        private DateTime seasonStart = new DateTime(2026, 01, 01);
+        private DateTime seasonEnd = new DateTime(2026, 11, 30);
 
         private TrophyLeaguePageDto? page;
         private bool isLoading;

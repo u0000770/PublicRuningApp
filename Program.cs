@@ -30,7 +30,7 @@ public class Program
         builder.Services.AddDbContextFactory<RRCContext>(options =>
     options.UseSqlServer(cs, sql =>
         sql.EnableRetryOnFailure(
-            maxRetryCount: 3,
+            maxRetryCount: 5,
             maxRetryDelay: TimeSpan.FromSeconds(10),
             errorNumbersToAdd: null)));
 

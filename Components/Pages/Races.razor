@@ -4,6 +4,135 @@
 @using RRCServices
 @inject IRaceEventService RaceEventService
 
+@{
+    // Take a snapshot of the filtered races so we don't re-run the LINQ multiple times
+    var filtered = FilteredRaces.ToList();
+}
+
+<PageTitle>JR and DB Races</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <h3 class="mb-0">JR and DB Races 2026</h3>
+</div>
+
+@if (_loading)
+{
+    <p>Loading…</p>
+}
+else if (!string.IsNullOrWhiteSpace(_error))
+{
+    <div class="alert alert-danger">@_error</div>
+}
+else if (_races.Count == 0)
+{
+    <p class="text-muted">No races found for this period.</p>
+}
+else
+{
+    <div class="text-muted mb-2">
+        <p>These are our JR and DB Trophy Races - for a definative list refer to the most recent email</p>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row g-2">
+                <div class="col-12 col-md-4">
+                    <label class="form-label mb-1">Distance</label>
+                    <select class="form-select form-select-sm" @bind="_selectedDistance">
+                        <option value="">All distances</option>
+                        @foreach (var d in _distanceOptions)
+                        {
+                            <option value="@d">@d</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <label class="form-label mb-1">Month</label>
+                    <select class="form-select form-select-sm" @bind="_selectedMonth">
+                        <option value="">All months</option>
+                        @foreach (var m in _monthOptions)
+                        {
+                            <option value="@m">@GetMonthName(m)</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <label class="form-label mb-1">Location</label>
+                    <select class="form-select form-select-sm" @bind="_selectedLocation">
+                        <option value="">All locations</option>
+                        @foreach (var loc in _locationOptions)
+                        {
+                            <option value="@loc">@loc</option>
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mt-2">
+                <small class="text-muted">
+                    Showing @filtered.Count of @_races.Count races
+                </small>
+                <button type="button"
+                        class="btn btn-link btn-sm text-decoration-none"
+                        @onclick="ResetFilters">
+                    Clear filters
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TABLE (RESPONSIVE ON MOBILE) -->
+    <div class="table-responsive-sm">
+        @if (!filtered.Any())
+        {
+            <p class="text-muted">
+                No Races of this Type at this Location on these dates ( that i know of anyway 😉 )
+            </p>
+        }
+        else
+        {
+            <table class="table table-sm table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th style="width:110px;">Date</th>
+                        <th>Event</th>
+                        <th style="width:110px;">Distance</th>
+                        <th style="width:200px;">Location</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in filtered)
+                    {
+                        <tr>
+                            <td>@r.Date.ToString("dd MMM")</td>
+                            <td>@(string.IsNullOrWhiteSpace(r.EventTitle) ? "(untitled)" : r.EventTitle)</td>
+                            <td>@(string.IsNullOrWhiteSpace(r.DistanceCode) ? "-" : r.DistanceCode)</td>
+                            <td>@(string.IsNullOrWhiteSpace(r.Location) ? "-" : r.Location)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+}
+
+
+
+
+
+
+
+
+
+@* @page "/races"
+@rendermode InteractiveServer
+
+@using RRCServices
+@inject IRaceEventService RaceEventService
+
 <PageTitle>JR and DB Races</PageTitle>
 
 <div class="d-flex justify-content-between align-items-center mb-2">
@@ -49,7 +178,7 @@ else
             }
         </tbody>
     </table>
-}
+} *@
 
 
 
