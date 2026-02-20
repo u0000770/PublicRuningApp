@@ -163,7 +163,7 @@ else
 
                    Points = HasPredicted(r) ? r.TrophyPoints : 0
                })
-                .OrderBy(x => x.RunnerName)
+                .OrderByDescending(x => x.DiffSeconds)
                 .ToList();
         }
         catch (Exception ex)
