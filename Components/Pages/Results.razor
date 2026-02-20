@@ -1,0 +1,205 @@
+﻿@rendermode InteractiveServer
+@page "/race-results"
+
+@using RRCServices
+@inject IRaceResultService ResultsService
+@inject IRaceEventService RaceEventService
+
+<h3>Race Results</h3>
+
+@if (_loadingList)
+{
+    <p>Loading races…</p>
+}
+else if (!string.IsNullOrWhiteSpace(_error))
+{
+    <div class="alert alert-danger">@_error</div>
+}
+else
+{
+    <select class="form-select mb-3"
+            style="max-width:420px"
+            @bind="_selectedRaceEventId"
+            @bind:after="OnRaceSelectedAsync">
+        <option value="">-- select race --</option>
+
+        @foreach (var r in _races)
+        {
+            <option value="@r.RaceEventId">@r.Title</option>
+        }
+    </select>
+
+    @if (_loadingResults)
+    {
+        <p>Loading results…</p>
+    }
+    else if (_selectedRaceEventId is not null)
+    {
+        if (_rows.Count == 0)
+        {
+            <p class="text-muted">No results found.</p>
+        }
+        else
+        {
+            <table class="table table-sm table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th>Runner</th>
+                        <th style="width:170px;">Actual</th>
+                        <th style="width:170px;">Predicted</th>
+                        <th style="width:140px;">Diff (sec)</th>
+                        <th style="width:140px;">Trophy Points</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in _rows)
+                    {
+                        <tr>
+                            <td>@row.RunnerName</td>
+                            <td>@row.Actual</td>
+                            <td>@row.Predicted</td>
+                            <td>@(row.DiffSeconds?.ToString() ?? "N/A")</td>
+                            <td>@row.Points</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    }
+}
+
+@code {
+    private sealed class RaceEventPickVm
+    {
+        public int RaceEventId { get; init; }
+        public string Title { get; init; } = "";
+    }
+
+    private sealed class RowVm
+    {
+        public string RunnerName { get; init; } = "";
+        public string Actual { get; init; } = "";
+        public string Predicted { get; init; } = "";
+        public int? DiffSeconds { get; init; }
+        public int Points { get; init; }
+    }
+
+    private List<RaceEventPickVm> _races = new();
+    private List<RowVm> _rows = new();
+    private int? _selectedRaceEventId;
+
+    private bool _loadingList = true;
+    private bool _loadingResults = false;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRaceDropdownAsync();
+    }
+
+    private async Task LoadRaceDropdownAsync()
+    {
+        _loadingList = true;
+        _error = null;
+        _races.Clear();
+        _selectedRaceEventId = null;
+
+        try
+        {
+            var cutoff = new DateTime(2026, 1, 1);
+
+            // ✅ ONE call: already filtered to "after cutoff" AND "has actual results"
+            var raceEvents = await RaceEventService.GetRaceEventListWithActualsAsync(
+                cutoff: cutoff,
+                activeOnly: true,
+                distanceCode: null);
+
+            _races = raceEvents
+                .OrderBy(x => x.EventTitle)
+                .Select(x => new RaceEventPickVm
+                {
+                    RaceEventId = x.RaceEventId,
+                    Title = x.EventTitle ?? $"Race {x.RaceEventId}"
+                })
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loadingList = false;
+        }
+    }
+
+    private async Task OnRaceSelectedAsync()
+    {
+        _rows.Clear();
+        _error = null;
+
+        if (_selectedRaceEventId is null)
+            return;
+
+        _loadingResults = true;
+        try
+        {
+            var page = await ResultsService.GetResultsForRaceEventAsync(
+                _selectedRaceEventId.Value,
+                includeOnlyCompleteTimes: false);
+
+            if (page?.Results is null) return;
+
+            _rows = page.Results
+                .Where(HasActual) // still safe, in case service returns extras
+               .Select(r => new RowVm
+               {
+                   RunnerName = r.RunnerName,
+                   Actual = FormatTime(r.ActualTime, r.ActualSeconds),
+                   Predicted = FormatTime(r.PredictedTime, r.TargetSeconds),
+
+                   DiffSeconds = HasPredicted(r) ? (r.TimeDifferenceSeconds)   // ✅ predicted - actual gives negative like you want
+                    : (int?)null,
+
+                   Points = HasPredicted(r) ? r.TrophyPoints : 0
+               })
+                .OrderBy(x => x.RunnerName)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loadingResults = false;
+        }
+    }
+
+    private static bool HasActual(RaceResultRowDTO r)
+        => (r.ActualSeconds ?? 0) > 0 || !string.IsNullOrWhiteSpace(r.ActualTime);
+
+    private static bool HasPredicted(RaceResultRowDTO r)
+    => r.TargetSeconds > 0 || !string.IsNullOrWhiteSpace(r.PredictedTime);
+
+    private static string FormatTime(string? dtoTime, int? seconds)
+    {
+        if (!string.IsNullOrWhiteSpace(dtoTime))
+            return ToColonHms(dtoTime);
+
+        if ((seconds ?? 0) <= 0)
+            return "";
+
+        var ts = TimeSpan.FromSeconds(seconds!.Value);
+        return $"{(int)ts.TotalHours:00}:{ts.Minutes:00}:{ts.Seconds:00}";
+    }
+
+    private static string ToColonHms(string? time)
+    {
+        if (string.IsNullOrWhiteSpace(time)) return "";
+        return time.Trim()
+            .Replace("h", "", StringComparison.OrdinalIgnoreCase)
+            .Replace("m", "", StringComparison.OrdinalIgnoreCase)
+            .Replace("s", "", StringComparison.OrdinalIgnoreCase);
+    }
+}

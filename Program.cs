@@ -47,6 +47,9 @@ public class Program
         builder.Services.AddScoped<IRunnerService, RunnerService>();
         builder.Services.AddScoped<IClock, SystemClock>();
         builder.Services.AddScoped<CalculatorService>();
+        builder.Services.AddScoped<IRaceResultService, RaceResultService>();
+        builder.Services.AddScoped<ITrophyCalculator, TrophyCalculator>();
+        builder.Services.AddSingleton<ITimeFormatter, TimeFormatter>();
 
         // ✅ Register the settings store (file path wherever you want)
         var seasonSettingsPath = Path.Combine(
@@ -60,6 +63,8 @@ public class Program
 
         builder.Services.AddScoped<ILeagueTableService, LeagueTableService>();
         builder.Services.AddScoped<ILeagueDataService, LeagueDataService>();
+
+     
 
 
         // Add services to the container.
