@@ -61,6 +61,8 @@ public class Program
         builder.Services.AddSingleton<ISeasonSettingsStore>(_ =>
             new JsonSeasonSettingsStore(seasonSettingsPath));
 
+        builder.Services.AddSingleton<ISeasonSettingsService, SeasonSettingsService>();
+
         builder.Services.AddScoped<ILeagueTableService, LeagueTableService>();
         builder.Services.AddScoped<ILeagueDataService, LeagueDataService>();
 

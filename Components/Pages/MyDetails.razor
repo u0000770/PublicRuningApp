@@ -1,12 +1,13 @@
 ﻿@page "/mydetails"
 @rendermode InteractiveServer
 
-@using Calculator
+@using XCalculator
 @using Microsoft.AspNetCore.Components
 @using RRCServices
 @using RRCServices.Calculator
 @using RRCServices.Clock
 @using RRCServices.Runner
+@using RRCServices.Season
 
 @* @using RRCServices.Season
 @inject ISeasonSettingsService SeasonSettingsService *@
@@ -16,6 +17,7 @@
 @* If you are using these in Calculate() *@
 @inject CalculatorService CalculatorService
 @inject IClock Clock
+@inject ISeasonSettingsService SeasonSettingsService
 
 <h4>My Time</h4>
 
