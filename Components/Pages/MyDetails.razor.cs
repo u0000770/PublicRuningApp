@@ -648,7 +648,8 @@ namespace PublicApp.Components.Pages
             // hardcoding new DateTime(2025, 12, 1). The admin SeasonDates page
             // manages this value — changes there are now reflected here immediately.
             var season = await SeasonSettingsService.GetAsync();
-            _seasonStart = season.SeasonStartDate.ToDateTime(TimeOnly.MinValue);
+            // _seasonStart = season.SeasonStartDate.ToDateTime(TimeOnly.MinValue);
+            _seasonStart = new DateTime(2025, 12, 1);
 
             // Load runner details
             _runner = await RunnerService.GetRunnerDetailsAsync(RunnerId, includeInactiveTimes: false);
