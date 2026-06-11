@@ -64,7 +64,7 @@ public class Program
         builder.Services.AddSingleton<ISeasonSettingsService, SeasonSettingsService>();
 
         builder.Services.AddScoped<ILeagueTableService, LeagueTableService>();
-        builder.Services.AddScoped<ILeagueDataService, LeagueDataService>();
+       // builder.Services.AddScoped<ILeagueDataService, LeagueDataService>();
 
      
 
