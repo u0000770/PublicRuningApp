@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PublicApp.Components;
+using RRCConfig.Data;
 using RRCDataModel.Data;
 using RRCServices;
 using RRCServices.Calculator;
@@ -45,23 +46,28 @@ public class Program
 
         builder.Services.AddScoped<IRaceEventService, RaceEventService>();
         builder.Services.AddScoped<IRunnerService, RunnerService>();
+        // SEASON WORK (batch 5): SystemClock is now RRCServices.Clock.SystemClock
+        // (UK time). PublicApp's own copy in clock.cs has been deleted.
         builder.Services.AddScoped<IClock, SystemClock>();
         builder.Services.AddScoped<CalculatorService>();
         builder.Services.AddScoped<IRaceResultService, RaceResultService>();
         builder.Services.AddScoped<ITrophyCalculator, TrophyCalculator>();
         builder.Services.AddSingleton<ITimeFormatter, TimeFormatter>();
 
-        // ✅ Register the settings store (file path wherever you want)
-        var seasonSettingsPath = Path.Combine(
-            builder.Environment.ContentRootPath,
-            "App_Data",
-            "seasonSettings.json");
+        // SEASON WORK (batch 5): the old JSON season settings registrations
+        // (ISeasonSettingsStore / JsonSeasonSettingsStore, ISeasonSettingsService)
+        // have been removed.
 
-        // ✅ Store + service registrations (required)
-        builder.Services.AddSingleton<ISeasonSettingsStore>(_ =>
-            new JsonSeasonSettingsStore(seasonSettingsPath));
-
-        builder.Services.AddSingleton<ISeasonSettingsService, SeasonSettingsService>();
+        // SEASON WORK (batch 2): seasons live in config.Season in the same
+        // database, via their own small SeasonContext (RRCConfig project).
+        // MyDetails and League use it.
+        builder.Services.AddDbContextFactory<SeasonContext>(options =>
+            options.UseSqlServer(cs, sql =>
+                sql.EnableRetryOnFailure(
+                    maxRetryCount: 5,
+                    maxRetryDelay: TimeSpan.FromSeconds(10),
+                    errorNumbersToAdd: null)));
+        builder.Services.AddScoped<ISeasonService, SeasonService>();
 
         builder.Services.AddScoped<ILeagueTableService, LeagueTableService>();
        // builder.Services.AddScoped<ILeagueDataService, LeagueDataService>();

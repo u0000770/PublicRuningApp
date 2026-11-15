@@ -9,15 +9,21 @@
 @* If you still have the nested namespace, use this instead: *@
 @using RRCServices.League
 @using RRCServices.League.DTO
+@using RRCServices.Season
 
 
 @inject ILeagueTableService LeagueTableService
+@inject ISeasonService SeasonService
 
 <PageTitle>League</PageTitle>
 
 <div class="container py-3">
     <h3 class="mb-3">Hypothetical New Rules League Tables</h3>
     <p> Meet or beat = 10, otherwise 6. JR best of 8, DB best of 6, your position is the best possible</p>
+    @if (season is not null)
+    {
+        <p class="text-muted">Season @season.Name: @season.Window</p>
+    }
     <div class="card mb-3">
         <div class="card-body">
             <div class="row g-3 align-items-end">

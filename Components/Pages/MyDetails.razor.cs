@@ -435,6 +435,15 @@
 //   All state fields, computed properties, lifecycle methods, UI event
 //   handlers, formatting helpers, TrophyRaces, SummaryText, PacePerMileText,
 //   ConfirmUpdate, navigation methods — all unchanged.
+//
+// SEASON WORK (batch 2, 15 Nov 2026):
+//   - ISeasonSettingsService (and the hard-coded 2025-12-01) replaced by
+//     ISeasonService. All seasons are loaded once in OnParametersSetAsync.
+//   - _seasonStart and _hasSeasonRaces are now worked out for the SELECTED
+//     RACE's date (ApplySeasonForSelectedRace, called at the start of
+//     Calculate). So the special November race is predicted from that year's
+//     races, and a January race uses only the new season's races. With no
+//     race selected, today's date is used.
 // =============================================================================
 
 using XCalculator;
@@ -466,6 +475,11 @@ namespace PublicApp.Components.Pages
 
         private DateTime _seasonStart;       // DateTime for comparisons (season start boundary)
         private bool _hasSeasonRaces;        // runner has >= 1 eligible race this season
+
+        // SEASON WORK (batch 2): all seasons (loaded once) and the one that
+        // applies to the selected race. Set by ApplySeasonForSelectedRace().
+        private IReadOnlyList<SeasonInfo> _seasons = Array.Empty<SeasonInfo>();
+        private SeasonInfo? _season;
 
         private RunnerDetailsDto? _runner;
         private List<RaceEventListItemDTO> _races = new();
@@ -644,12 +658,10 @@ namespace PublicApp.Components.Pages
                 return;
             }
 
-            // CHANGE: read season start from the settings service rather than
-            // hardcoding new DateTime(2025, 12, 1). The admin SeasonDates page
-            // manages this value — changes there are now reflected here immediately.
-            var season = await SeasonSettingsService.GetAsync();
-            // _seasonStart = season.SeasonStartDate.ToDateTime(TimeOnly.MinValue);
-            _seasonStart = new DateTime(2025, 12, 1);
+            // SEASON WORK (batch 2): load all seasons once (a handful of rows).
+            // Replaces the hard-coded _seasonStart = 2025-12-01. The season used
+            // is chosen per selected race in ApplySeasonForSelectedRace().
+            _seasons = await SeasonService.ListAsync();
 
             // Load runner details
             _runner = await RunnerService.GetRunnerDetailsAsync(RunnerId, includeInactiveTimes: false);
@@ -660,12 +672,9 @@ namespace PublicApp.Components.Pages
                 return;
             }
 
-            // CHANGE: _hasSeasonRaces now delegates to SelectRacesForPredictionInput
-            // so the guard uses exactly the same criteria as the prediction itself.
-            // Previously this had its own inline check with its own IsOneMile call.
-            _hasSeasonRaces = CalculatorService
-                .SelectRacesForPredictionInput(_runner.EventTimes, _seasonStart, Clock.Now.Date)
-                .Count > 0;
+            // SEASON WORK (batch 2): _hasSeasonRaces is now set in
+            // ApplySeasonForSelectedRace(), called from Calculate() below, because
+            // it depends on which race is selected.
 
             // Load upcoming races (next 3 months)
             var from = Clock.Now.Date;
@@ -714,6 +723,29 @@ namespace PublicApp.Components.Pages
         private static double GetRaceEventDistanceMeters(RaceEventListItemDTO re) => re.DistanceMeters;
 
         /// <summary>
+        /// SEASON WORK (batch 2): works out the season for the selected race
+        /// (or today, if no race is selected) and sets _season, _seasonStart and
+        /// _hasSeasonRaces. Uses the effective season: inside a season, that
+        /// season; between seasons (the special November race), the season
+        /// that has just ended.
+        /// </summary>
+        private void ApplySeasonForSelectedRace()
+        {
+            var date = SelectedRaceEvent?.Date ?? Clock.Now.Date;
+
+            _season = SeasonRules.FindEffective(_seasons, DateOnly.FromDateTime(date));
+
+            // No season covers the date: MaxValue means no race qualifies.
+            _seasonStart = _season?.Window.FromInclusive ?? DateTime.MaxValue;
+
+            _hasSeasonRaces = _runner is not null
+                && _season is not null
+                && CalculatorService
+                    .SelectRacesForPredictionInput(_runner.EventTimes, _seasonStart, Clock.Now.Date)
+                    .Count > 0;
+        }
+
+        /// <summary>
         /// Calculates predicted time (seconds) for the selected event using up to 3 recent eligible races.
         ///
         /// CHANGE: the inline LINQ block that built the 'recent' list has been replaced
@@ -728,9 +760,18 @@ namespace PublicApp.Components.Pages
             _calcMessage = null;
             _saveMessage = null;
 
+            // SEASON WORK (batch 2): season depends on the selected race.
+            ApplySeasonForSelectedRace();
+
             if (_runner is null || SelectedRaceEvent is null)
             {
                 _calcMessage = "Please select a runner and a race event.";
+                return;
+            }
+
+            if (_season is null)
+            {
+                _calcMessage = "We can't provide a predicted time for this race — no season has been set up for it yet.";
                 return;
             }
 
