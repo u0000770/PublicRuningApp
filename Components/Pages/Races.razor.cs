@@ -7,8 +7,11 @@ namespace PublicApp.Components.Pages
         private bool _loading = true;
         private string? _error;
 
-        private readonly DateTime _from = new DateTime(2026, 1, 1);
-        private readonly DateTime _to = new DateTime(2026, 12, 1);
+        // SEASON WORK: the date range is the current season from config.Season
+        // (ISeasonService), not hard-coded. Between seasons (Nov–Dec) this is the
+        // season that has just ended; the new season's races appear on 1 Jan.
+        // ❌ OLD: _from = new DateTime(2026, 1, 1);  _to = new DateTime(2026, 12, 1);
+        private string _seasonName = "";
 
         private List<RaceEventListItemVM> _races = new();
 
@@ -36,11 +39,21 @@ namespace PublicApp.Components.Pages
 
             try
             {
+                var season = await SeasonService.GetCurrentAsync();
+                if (season is null)
+                {
+                    _error = "No season has been set up yet.";
+                    return;
+                }
+
+                _seasonName = season.Name;
+
+                // Both ends are inclusive in the service; race dates have no time part.
                 var dto = await RaceEventService.GetRaceEventListAsync(
                     activeOnly: true,
                     distanceCode: null,
-                    from: _from,
-                    to: _to);
+                    from: season.Window.FromInclusive,
+                    to: season.EndDate.ToDateTime(TimeOnly.MinValue));
 
                 _races = dto
                     .Where(x => x.Active)

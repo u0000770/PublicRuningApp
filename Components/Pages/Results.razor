@@ -2,8 +2,10 @@
 @page "/race-results"
 
 @using RRCServices
+@using RRCServices.Season
 @inject IRaceResultService ResultsService
 @inject IRaceEventService RaceEventService
+@inject ISeasonService SeasonService
 
 <h3>Race Results</h3>
 
@@ -106,7 +108,15 @@ else
 
         try
         {
-            var cutoff = new DateTime(2026, 1, 1);
+            // SEASON WORK: races from the start of the current season (config.Season),
+            // not a hard-coded 1 Jan 2026. Between seasons (Nov–Dec) this is the season
+            // that has just ended, so the special November race's results show too.
+            // The service keeps races strictly AFTER the cutoff, so use the day before
+            // the season starts to include a race on its first day (e.g. 1 Jan).
+            // ❌ OLD: var cutoff = new DateTime(2026, 1, 1);
+            var season = await SeasonService.GetCurrentAsync();
+            var seasonStart = season?.StartDate ?? new DateOnly(DateTime.Today.Year, 1, 1);
+            var cutoff = seasonStart.AddDays(-1).ToDateTime(TimeOnly.MinValue);
 
             // ✅ ONE call: already filtered to "after cutoff" AND "has actual results"
             var raceEvents = await RaceEventService.GetRaceEventListWithActualsAsync(
@@ -161,7 +171,11 @@ else
                    DiffSeconds = HasPredicted(r) ? (r.TimeDifferenceSeconds)   // ✅ predicted - actual gives negative like you want
                     : (int?)null,
 
-                   Points = HasPredicted(r) ? r.TrophyPoints : 0
+                   // NO-TARGET RULE: show the service's points as they are. It now
+                   // applies the season rule (no target = 6 when the season allows
+                   // it), so this page and the league always agree.
+                   // ❌ OLD: Points = HasPredicted(r) ? r.TrophyPoints : 0
+                   Points = r.TrophyPoints
                })
                 .OrderByDescending(x => x.DiffSeconds)
                 .ToList();
