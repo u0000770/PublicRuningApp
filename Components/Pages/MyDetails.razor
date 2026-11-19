@@ -108,6 +108,10 @@ else
                                 <th>Distance</th>
                                 <th>Date</th>
                                 <th>Recorded Time</th>
+                                @if (AnyRaceCapped)
+                                {
+                                    <th>Calculator Time</th>
+                                }
                             </tr>
                         </thead>
                         <tbody>
@@ -118,10 +122,29 @@ else
                                     <td>@FormatRaceDistanceLabel(r.DistanceMeters ?? 0)</td>
                                     <td>@(r.RaceDate?.ToString("d MMM yyyy"))</td>
                                     <td>@FormatHms(r.ActualSeconds ?? 0)</td>
+                                    @if (AnyRaceCapped)
+                                    {
+                                        <td>
+                                            @CalculatorTimeText(r)
+                                            @if (IsCappedForPrediction(r))
+                                            {
+                                                <span title="Capped at your target + 7%"> &#10033;</span>
+                                            }
+                                        </td>
+                                    }
                                 </tr>
                             }
                         </tbody>
                     </table>
+
+                    @if (AnyRaceCapped)
+                    {
+                        <p class="text-muted small mb-0">
+                            &#10033; You finished this race more than 7% slower than your target,
+                            so to work out your next predicted time the calculator used your target + 7%.
+                            Your recorded time, trophy points and results are not changed.
+                        </p>
+                    }
                 }
             </div>
         </div>

@@ -804,7 +804,7 @@ namespace PublicApp.Components.Pages
                 return;
             }
 
-            var predicted = CalculatorService.PredictFromRecentRaces(recent, newDistanceMeters);
+            var predicted = CalculatorService.PredictFromRecentRacesForSeason(recent, newDistanceMeters, _season.ApplyPredictionCap);   // 7% CAP: on/off per season
             if (predicted is null)
             {
                 _calcMessage = "Prediction failed (no usable recent race data).";
